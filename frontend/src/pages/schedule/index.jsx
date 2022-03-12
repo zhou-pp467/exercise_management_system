@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useState } from 'react';
-import { EllipsisOutlined } from '@ant-design/icons';
+import { EllipsisOutlined, CaretLeftOutlined, CaretRightOutlined } from '@ant-design/icons';
 import { Col, Dropdown, Menu, Row } from 'antd';
 import { GridContent } from '@ant-design/pro-layout';
 import IntroduceRow from './components/IntroduceRow';
@@ -18,32 +18,53 @@ import { LocaleProvider } from 'antd';
 import zh_CN from 'antd/lib/locale-provider/zh_CN';
 import moment from 'moment';
 
+const headerStyle = {
+  textAlign: "center",
+  height: '100px',
+  lineHeight: '100px',
+  fontFamily: "PingFangSC-Medium",
+  fontSize: 18,
+  fontWeight: "500",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: 'center'
+}
+const textStyle = {
+  paddingLeft: 20,
+  paddingRight: 20
+}
+
 const DateCellRender = (props) => {
-  const { value, dataSource } = props
+  const { value, currentYearMonth } = props
   const [node, setNode] = useState(<></>)
   useEffect(() => {
-    getNode(value)
-  }, [dataSource])
-  async function getNode(v) {
-    let date = v.format('YYYY-MM-DD')
-    try {
-      let result = await getDayData(date) || {} //调用接口
-      let listData = result.content || []
-      listData?.length ?
-        setNode(
-          <ul className="events">
-            {
-              listData.map(item => {
-                return (
-                  <li key={item.content}>
-                    <Badge status={item.type} text={item.content} />
-                  </li>
-                )
-              })}
-          </ul>)
-        : setNode(<></>)
-    } catch (error) {
-      setNode(<></>)
+    getNode()
+  }, [value])
+
+  const getNode = async () => {
+    let formatDate = value.format('YYYY-MM-DD')
+    let date = value.format('MM')
+    //判断当前输出月份是否与头部月份相同
+    if (date == currentYearMonth.format("MM")) {
+      try {
+        let result = await getDayData(formatDate) || {} //调用接口
+        let listData = result.content || []
+        listData?.length ?
+          setNode(
+            <ul className="events">
+              {
+                listData.map(item => {
+                  return (
+                    <li key={item.content}>
+                      <Badge status={item.type} text={item.content} />
+                    </li>
+                  )
+                })}
+            </ul>)
+          : setNode(<></>)
+      } catch (error) {
+        setNode(<></>)
+      }
     }
   }
   return node
@@ -63,33 +84,49 @@ function info() {
 }
 
 const Schedule = () => {
-  const [dataSource, setDataSource] = useState('')
+  const [currentYearMonth, setCurrentYearMonth] = useState(moment().endOf('day'));
+
+  const headerRender = ({ value, onChange }) => {
+    const handleClickMonth = (type) => {
+      //左箭头往前1个月，右箭头，往后1个月
+      let clickMode = type === 'prev' ? 'subtract' : 'add'
+      let month = moment(currentYearMonth)[clickMode](1, "month")
+      //设置当前年月份
+      setCurrentYearMonth(month)
+      //触发改变面板对应值的回调函数
+      onChange(month)
+    }
 
 
-  const onPanelChange = (e) => {
-    let date = e['_d']
-    setDataSource(moment(date).format("yyyy-MM-DD"))
+    return (
+      <div className="customeHeader" style={headerStyle}>
+        <Button size="small"
+          shape="circle"
+          icon={<CaretLeftOutlined />}
+          onClick={() => { handleClickMonth('prev') }}
+        />
+        <span className="title" style={textStyle}>{moment(currentYearMonth).format('YYYY年MM月')}</span>
+        <Button size="small"
+          shape="circle"
+          icon={<CaretRightOutlined />}
+          onClick={() => handleClickMonth('next')}
+        />
+      </div>
+    )
   }
-
 
   return (
     <GridContent>
       <LocaleProvider locale={zh_CN}>
         <Calendar
-          dateCellRender={value => <DateCellRender value={value} dataSource={dataSource} />}
-          onPanelChange={onPanelChange}
-          // onSelect={info}
-          headerRender={(obj) => {
-            return <div style={{ paddingTop: 10, paddingBottom: 10, textAlign: 'center' }}>
-              <h3><span>{ }</span>{obj.value.format('YYYY-MM-DD') + '（适合ipad或电脑上查看）'}<span>{ }</span></h3>
-            </div>
-          }}
+          dateCellRender={value => <DateCellRender value={value} currentYearMonth={currentYearMonth} />}
+          headerRender={headerRender}
         />
       </LocaleProvider>
     </GridContent>
   )
-}
 
+}
 
 
 
