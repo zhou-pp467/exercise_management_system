@@ -20,41 +20,36 @@ import moment from 'moment';
 
 const DateCellRender = (props) => {
   const { value, dataSource } = props
-  let exercise_response
-  let running_response
   const [node, setNode] = useState(<></>)
   useEffect(() => {
     getNode(value)
-    console.log(dataSource, value)
   }, [dataSource])
-  async function getNode (v) {
+  async function getNode(v) {
     let date = v.format('YYYY-MM-DD')
-    let listData = await getDayData(date) //调用接口
-    exercise_response = listData.exercise_response || []
-    running_response = listData.running_response || []
-    // console.log(exercise_response, running_response)
-    setNode(
-      <ul className="events">
-        {
-          exercise_response ? exercise_response.map(item => {
-            return (
-              <li key={item.content}>
-                <Badge status={item.type} text={item.content} />
-              </li>
-            )
-          }) : null}
-        {
-          running_response ? running_response.map(item => (
-            <li key={item.content}>
-              <Badge status={item.type} text={item.content} />
-            </li>
-          )) : null}
-      </ul>)
+    try {
+      let result = await getDayData(date) || {} //调用接口
+      let listData = result.content || []
+      listData?.length ?
+        setNode(
+          <ul className="events">
+            {
+              listData.map(item => {
+                return (
+                  <li key={item.content}>
+                    <Badge status={item.type} text={item.content} />
+                  </li>
+                )
+              })}
+          </ul>)
+        : setNode(<></>)
+    } catch (error) {
+      setNode(<></>)
+    }
   }
   return node
 }
 
-function info () {
+function info() {
   Modal.info({
     title: '',
     content: (
@@ -63,7 +58,7 @@ function info () {
         <p>some messages...some messages...</p>
       </div>
     ),
-    onOk () { },
+    onOk() { },
   });
 }
 
