@@ -1,5 +1,5 @@
 # from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 import json
 import datetime
 from serializers import StrengthRecordSerializer, RunningRecordSerializer,\
@@ -38,27 +38,29 @@ def get_calendar_data(request):
 @api_view(['GET'])
 def get_day_data(request):
     try:
-        date = datetime.datetime.strptime(request.GET.get('date'), '%Y-%m-%d')
+        date_str = request.GET.get('date')
+        date = datetime.datetime.strptime(date_str, '%Y-%m-%d')
         running_records = RunningRecord.objects.filter(date=date)
         strength_training_records = StrengthTrainingRecord.objects.filter(date=date)
         exercise_plan_items = ExercisePlanItem.objects.filter(date=date)
         running_plan_items = RunningPlanItem.objects.filter(date=date)
     except Exception as error:
-        print(str(error), '-------')
         raise RuntimeError
     strength_records_serializer = StrengthRecordSerializer(strength_training_records, many=True)
     running_records_serializer = RunningRecordSerializer(running_records, many=True)
     exercise_plan_serializer = ExercisePlanSerializer(exercise_plan_items, many=True)
     running_plan_serializer = RunningPlanSerializer(running_plan_items, many=True)
-    print('=========',strength_records_serializer)
     exercise_items = list(set([i['type'] for i in strength_records_serializer.data] +
                               [i['type'] for i in exercise_plan_serializer.data]))
-    exercise_response = [{'type': 'error' if ((item in [i['type'] for i in exercise_plan_serializer.data]) and
-                                              (item not in [i['type'] for i in strength_records_serializer.data])) else 'success',
+    # 只在plan里的项目type为error，其他情况type为success
+    exercise_response = [{'date': date_str,
+                          'type': 'error' if ((item in [i['type'] for i in exercise_plan_serializer.data]) and
+                        (item not in [i['type'] for i in strength_records_serializer.data])) else 'success',
                           'content': item} for item in exercise_items]
-    running_response = [{'type': 'success' if len(running_records_serializer.data) > 0 else 'error', 'content': '跑步'}]\
-        if len(running_records_serializer.data) > 0 or len(running_plan_serializer.data) > 0 else []
-    return HttpResponse(json.dumps({
-        'exercise_response': exercise_response,
-        'running_response': running_response
-    }))
+    running_response = [{"date": date_str,
+                        'type': 'success' if len(running_records_serializer.data) > 0 else 'error',
+                         'content': '跑步'
+                         }] if len(running_records_serializer.data) > 0 or len(running_plan_serializer.data) > 0 else []
+    result = exercise_response + running_response
+
+    return JsonResponse({'businessCode': 1000, 'content': result})
