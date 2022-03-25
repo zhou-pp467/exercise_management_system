@@ -27,5 +27,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('get_calendar_data', get_calendar_data, name='get_calendar_data'),
     path('get_day_data', get_day_data, name='get_day_data'),
-    path('auto_response/', include('weixin.urls'))
+    path('wx', include('weixin.urls'))
 ]

@@ -1,6 +1,6 @@
 from django.conf.urls import url
-from . import views
+from weixin.views import message
 
 urlpatterns = [
-    url('messages', views.Message.as_view(), name='message')
+    url('', message)
 ]
