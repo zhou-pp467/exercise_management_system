@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from plan.views import get_calendar_data, get_day_data
+from plan.views import get_day_data
 
 
 admin.site.site_header = "周雷的运动管理后台"
@@ -25,7 +25,6 @@ admin.site.index_title = "周雷的运动管理后台"
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('get_calendar_data', get_calendar_data, name='get_calendar_data'),
     path('get_day_data', get_day_data, name='get_day_data'),
     path('wx', include('weixin.urls'))
 ]
