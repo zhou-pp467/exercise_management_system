@@ -10,6 +10,9 @@ const Settings = {
   "logo": null,
   "title": '运动管理系统',
   "headerHeight": 48,
-  "splitMenus": false
+  "splitMenus": false,
+  "menu": {
+    "locale": false
+  }
 }
 export default Settings;
