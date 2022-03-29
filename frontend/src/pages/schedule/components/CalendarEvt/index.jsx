@@ -22,6 +22,40 @@ class CalendarDemo extends Component {
         this.myRef = React.createRef();
     }
 
+    handleDateEvt(arg, successCallback) {
+        let events = []
+        //ref不能同步获取，设置timeout微任务异步执行
+        const timer = setTimeout(() => {
+            clearTimeout(timer);
+            const YM = this.myRef?.current.calendar.view.title;  //获取标题title，截取年月的数值
+            if (YM.length > 8) return
+            const ym = YM.replace('年', '-').replace('月', '');
+            const year = moment(ym).format('YYYY');
+            const month = moment(ym).format('MM');
+            axios(`${url}/get_day_data?year=${year}&month=${month}`).then(res => {
+                let { data } = res
+                if (data?.businessCode * 1 === 1000) {
+                    let { content } = data
+                    if (content?.length) {
+                        let newArray = content.map(_item => {
+                            let { type } = _item
+                            return {
+                                ..._item,
+                                repeatExecute: false, //不重复
+                                allDay: true, //整天
+                                textColor: '#fff',
+                                backgroundColor: type == "error" ? "#e38a8a" : "#008000b0",
+                                borderColor: "transparent",
+                            }
+                        })
+                        events = newArray
+                    }
+                    successCallback(events)
+                }
+            })
+        }, 0)
+    }
+
     render() {
         return (
             <div className='container'>
@@ -35,7 +69,8 @@ class CalendarDemo extends Component {
                     header={{
                         left: "prevYear,prev,next,nextYear today", // 上一年，上一月，下一月，下一年 今天
                         center: "title", // 当前年月
-                        right: "dayGridMonth,timeGridWeek,timeGridDay" // 月 周 天
+                        right: ""
+                        // right: "dayGridMonth,timeGridWeek,timeGridDay" // 月 周 天
                     }}
                     locale='zh-cn'
                     buttonText={{
@@ -63,37 +98,7 @@ class CalendarDemo extends Component {
                         }
                     }
                     events={(arg, successCallback) => {
-                        let events = []
-                        //ref不能同步获取，设置timeout微任务异步执行
-                        const timer = setTimeout(() => {
-                            clearTimeout(timer);
-                            const YM = this.myRef?.current.calendar.view.title;  //获取标题title，截取年月的数值
-                            if (YM.length > 8) return
-                            const ym = YM.replace('年', '-').replace('月', '');
-                            const year = moment(ym).format('YYYY');
-                            const month = moment(ym).format('MM');
-                            axios(`${url}/get_day_data?year=${year}&month=${month}`).then(res => {
-                                let { data } = res
-                                if (data?.businessCode * 1 === 1000) {
-                                    let { content } = data
-                                    if (content?.length) {
-                                        let newArray = content.map(_item => {
-                                            let { type } = _item
-                                            return {
-                                                ..._item,
-                                                repeatExecute: false, //不重复
-                                                allDay: true, //整天
-                                                textColor: '#fff',
-                                                backgroundColor: type == "error" ? "#e38a8a" : "#008000b0",
-                                                borderColor: "transparent",
-                                            }
-                                        })
-                                        events = newArray
-                                    }
-                                    successCallback(events)
-                                }
-                            })
-                        }, 0)
+                        this.handleDateEvt(arg, successCallback)
                     }}
                     eventTimeFormat={
                         {
