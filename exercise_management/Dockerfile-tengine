@@ -1,0 +1,25 @@
+FROM centos:7
+# 维护人员
+MAINTAINER zhoupp467
+# 复制tengine 到容器中
+COPY ./tengine-2.3.3 /app/download/tengine-2.3.3
+# 安装编译工具
+RUN yum install -y gcc gcc-c++ automake pcre pcre-devel zlip zlib-devel openssl openssl-devel
+# 指定工作目录
+WORKDIR /app/download/tengine-2.3.3
+# 编译安装
+RUN /app/download/tengine-2.3.3/configure --prefix=/app/tengine --add-module=/app/download/tengine-2.3.3/modules/ngx_http_upstream_check_module --with-stream --with-stream_ssl_module
+RUN make && make install
+# 指定容器时区
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+# 设置环境变量
+ENV LANG=en_US.UTF-8
+# 工作目录
+WORKDIR /app/tengine
+# 设置配置文件目录
+RUN mkdir -p /app/tengine/conf/conf.d
+RUN mkdir -p /app/tengine/conf/stream.d
+# 暴露容器端口号
+EXPOSE 80
+# 启动容器时自动启动 tengine
+CMD /app/tengine/sbin/nginx -g "daemon off;"
